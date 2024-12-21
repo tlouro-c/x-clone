@@ -1,0 +1,59 @@
+version: '3.8'
+
+networks:
+  app-internal-network:
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-internal-network
+
+  springboot:
+    build:
+      context: ./springboot_api
+      dockerfile: Dockerfile
+    container_name: springboot
+    environment:
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD}
+      SPRING_DATASOURCE_DRIVER: ${SPRING_DATASOURCE_DRIVER}
+      SPRING_JWT_SECRET: ${SPRING_JWT_SECRET}
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD}
+    depends_on:
+      - postgres
+    volumes:
+      - springboot_data:/app/uploads
+    networks:
+      - app-internal-network
+
+  nextjs:
+    build:
+      context: ./nextjs
+      dockerfile: Dockerfile
+    container_name: nextjs
+    environment:
+      API_URL: ${NEXTJS_API_URL}
+    depends_on:
+      - springboot
+    ports:
+      - "3000:3000"
+    networks:
+      - app-internal-network
+
+volumes:
+  postgres_data:
+  springboot_data:
+
+
+
